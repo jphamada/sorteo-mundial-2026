@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Sorteo Mundial 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #1B443B; /* Dark Green */
+            --secondary-bg: #2A5A4D; /* Slightly lighter green */
+            --accent-color: #DAA520; /* Goldenrod/Gold */
+            --text-light: #E0E7FF;
+            --text-dark: #A9B3BB;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-light);
+        }
+        
+        .trophy-gold-text {
+            color: var(--accent-color);
+        }
+
+        .trophy-gold-border {
+            border-color: var(--accent-color);
+        }
+
+        .trophy-gold-bg {
+            background-color: var(--accent-color);
+        }
+
+        /* Ball Animation */
+        .draw-ball {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle at 30% 30%, #3a3a3a, #1a1a1a);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 10px;
+            border: 1px solid #555;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .draw-ball::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+        }
+
+        .draw-ball:hover {
+            transform: scale(1.2);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.6);
+        }
+
+        .draw-ball.popped {
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        /* Team Cards in Pots */
+        .team-item {
+            transition: all 0.3s ease;
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        .team-item.drawn {
+            opacity: 0.3;
+            text-decoration: line-through;
+            background-color: transparent;
+        }
+
+        /* Group Card */
+        .group-card {
+            background: var(--secondary-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .group-header {
+            background: var(--primary-bg);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Group Slot Animation */
+        .group-slot {
+            transition: all 0.5s ease;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .group-slot.filled {
+            animation: slideIn 0.4s ease-out forwards;
+            background: linear-gradient(90deg, rgba(218, 165, 32, 0.1), transparent);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            animation: fall linear forwards;
+            z-index: 100;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-black/50 border-b border-white/10 p-4 sticky top-0 z-50 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 trophy-gold-bg rounded-full flex items-center justify-center font-extrabold text-white text-xs">26</div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">
+                    MUNDIAL <span class="trophy-gold-text">2026</span>
+                </h1>
+            </div>
+            <div class="text-xs font-mono bg-white/10 text-white px-3 py-1 rounded-full border border-white/20" id="status-indicator">
+                Listo
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 space-y-8">
+        
+        <!-- Pots Display -->
+        <section id="pots-container" class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <!-- Pots will be injected here by JS -->
+        </section>
+
+        <!-- Groups Grid (12 Groups for 2026) -->
+        <div class="text-center mb-2">
+            <h2 class="text-xl font-extrabold text-white tracking-widest uppercase">Fase de Grupos</h2>
+            <div class="w-24 h-1 trophy-gold-bg mx-auto mt-2 rounded-full"></div>
+        </div>
+        
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <!-- Groups A-L -->
+            <div id="groups-grid" class="contents">
+                <!-- Groups injected here -->
+            </div>
+        </section>
+        <!-- Spacer for footer -->
+        <div class="h-24"></div>
+    </main>
+
+    <!-- Footer / Interaction Zone -->
+    <footer class="bg-black/50 border-t border-white/10 p-6 fixed bottom-0 w-full shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-40">
+        <div class="container mx-auto text-center">
+            <h2 id="action-title" class="text-lg font-bold text-white mb-4 uppercase tracking-wider">Esperando inicio...</h2>
+            
+            <!-- The Black Balls Container -->
+            <div id="balls-container" class="flex flex-wrap justify-center gap-3 min-h-[60px]">
+                <!-- Balls injected here -->
+            </div>
+
+            <button id="reset-btn" onclick="resetDraw()" class="hidden mt-4 px-8 py-3 bg-white text-gray-900 font-bold rounded-full hover:bg-gray-200 transition shadow-lg">
+                NUEVO SORTEO
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA 2026 ---
+        // Banderas eliminadas para evitar problemas de renderizado
+        const potsData = [
+            {
+                id: 1,
+                label: "Bombo 1 (Cabezas)",
+                teams: [
+                    { name: "Estados Unidos" }, { name: "México" }, { name: "Canadá" },
+                    { name: "Argentina" }, { name: "Brasil" }, { name: "Inglaterra" },
+                    { name: "Francia" }, { name: "Portugal" }, { name: "Países Bajos" },
+                    { name: "Alemania" }, { name: "Bélgica" }, { name: "España" }
+                ]
+            },
+            {
+                id: 2,
+                label: "Bombo 2",
+                teams: [
+                    { name: "Croacia" }, { name: "Marruecos" }, { name: "Colombia" },
+                    { name: "Uruguay" }, { name: "Senegal" }, { name: "Suiza" },
+                    { name: "Japón" }, { name: "Irán" }, { name: "Corea del Sur" },
+                    { name: "Ecuador" }, { name: "Austria" }, { name: "Australia" }
+                ]
+            },
+            {
+                id: 3,
+                label: "Bombo 3",
+                teams: [
+                    { name: "Noruega" }, { name: "Panamá" }, { name: "Egipto" },
+                    { name: "Argelia" }, { name: "Escocia" }, { name: "Paraguay" },
+                    { name: "Túnez" }, { name: "Costa de Marfil" }, { name: "Uzbekistán" },
+                    { name: "Qatar" }, { name: "Arabia Saudita" }, { name: "Sudáfrica" }
+                ]
+            },
+            {
+                id: 4,
+                label: "Bombo 4",
+                teams: [
+                    { name: "Jordania" }, { name: "Cabo Verde" }, { name: "Ghana" },
+                    { name: "Curazao" }, { name: "Haití" }, { name: "Nueva Zelanda" },
+                    { name: "Repechaje Europa 1" }, { name: "Repechaje Europa 2" }, { name: "Repechaje Europa 3" },
+                    { name: "Repechaje Europa 4" }, { name: "Rep. Intercont. 1" }, { name: "Rep. Intercont. 2" }
+                ]
+            }
+        ];
+
+        // 12 Groups for 2026
+        const groupNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+        
+        // --- STATE ---
+        let currentPotIndex = 0;
+        let currentTeams = [];
+        let groupAssignments = Array(12).fill().map(() => []); 
+        let currentGroupTarget = 0; // 0 = A ... 11 = L
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initUI();
+            startPot(0);
+        });
+
+        function initUI() {
+            // Render Pots
+            const potsContainer = document.getElementById('pots-container');
+            potsContainer.innerHTML = '';
+            potsData.forEach((pot, index) => {
+                const potDiv = document.createElement('div');
+                potDiv.className = `p-3 rounded-lg border border-white/10 ${index === 0 ? 'bg-white/5' : 'bg-black/20'}`;
+                potDiv.id = `pot-display-${index}`;
+                potDiv.innerHTML = `
+                    <h3 class="font-bold text-white mb-2 text-center uppercase text-[10px] tracking-widest">${pot.label}</h3>
+                    <ul class="grid grid-cols-1 gap-1">
+                        ${pot.teams.map(t => `
+                            <li class="team-item flex items-center gap-2 p-1 text-white/80" id="team-ref-${cleanId(t.name)}">
+                                <span class="truncate font-medium">${t.name}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                potsContainer.appendChild(potDiv);
+            });
+
+            // Render Groups (12 cards)
+            const groupsGrid = document.getElementById('groups-grid');
+            groupsGrid.innerHTML = '';
+            groupNames.forEach((letter, index) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "group-card rounded-xl overflow-hidden shadow-lg flex flex-col";
+                groupDiv.innerHTML = `
+                    <div class="group-header p-3 flex justify-between items-center">
+                        <span class="font-extrabold text-white text-lg">GRUPO ${letter}</span>
+                        <span class="text-xs text-white/50 font-mono">#${index + 1}</span>
+                    </div>
+                    <div class="p-3 flex-grow space-y-1 bg-[var(--secondary-bg)] min-h-[140px]" id="group-content-${index}">
+                        <!-- 4 Slots per group -->
+                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">1. [Cabeza de Serie]</div>
+                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">2. [Bombo 2]</div>
+                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">3. [Bombo 3]</div>
+                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">4. [Bombo 4]</div>
+                    </div>
+                `;
+                groupsGrid.appendChild(groupDiv);
+            });
+        }
+
+        function startPot(potIndex) {
+            if (potIndex >= 4) {
+                finishDraw();
+                return;
+            }
+
+            currentPotIndex = potIndex;
+            currentTeams = [...potsData[potIndex].teams]; 
+            currentGroupTarget = 0; 
+
+            // UI Updates
+            const potLabel = potsData[potIndex].label;
+            document.getElementById('action-title').innerHTML = `SORTEANDO <span class="trophy-gold-text">${potLabel}</span> (${currentTeams.length} Equipos)`;
+            document.getElementById('status-indicator').textContent = `Bombo ${potIndex + 1}/4`;
+            
+            // Highlight current pot
+            document.querySelectorAll('[id^="pot-display-"]').forEach((el, idx) => {
+                if (idx === potIndex) {
+                    el.classList.add('trophy-gold-border', 'bg-white/10', 'ring-1', 'ring-[var(--accent-color)]');
+                    el.classList.remove('bg-black/20', 'border-white/10');
+                } else {
+                    el.classList.remove('trophy-gold-border', 'bg-white/10', 'ring-1', 'ring-[var(--accent-color)]');
+                    el.classList.add('border-white/10', 'bg-black/20');
+                    if(idx < potIndex) el.style.opacity = '0.4';
+                }
+            });
+
+            renderBalls(currentTeams.length);
+        }
+
+        function renderBalls(count) {
+            const container = document.getElementById('balls-container');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'draw-ball animate-bounce-in';
+                ball.innerHTML = '⚽';
+                ball.onclick = (e) => pickTeam(e.target);
+                container.appendChild(ball);
+            }
+        }
+
+        function pickTeam(ballElement) {
+            if (ballElement.classList.contains('popped')) return;
+            
+            ballElement.classList.add('popped');
+            
+            const randomIndex = Math.floor(Math.random() * currentTeams.length);
+            const selectedTeam = currentTeams[randomIndex];
+            
+            currentTeams.splice(randomIndex, 1);
+
+            const groupIndex = currentGroupTarget;
+            groupAssignments[groupIndex].push(selectedTeam);
+
+            updateGroupUI(groupIndex, selectedTeam, currentPotIndex);
+            markTeamAsDrawn(selectedTeam.name);
+
+            currentGroupTarget++;
+
+            if (currentTeams.length === 0) {
+                setTimeout(() => {
+                    startPot(currentPotIndex + 1);
+                }, 800);
+            }
+        }
+
+        function updateGroupUI(groupIndex, team, potIndex) {
+            const container = document.getElementById(`group-content-${groupIndex}`);
+            const slots = container.querySelectorAll('.group-slot');
+            const targetSlot = slots[potIndex]; 
+
+            targetSlot.innerHTML = `<div class="flex items-center gap-3">
+                <span class="font-bold text-white text-sm">${team.name}</span>
+            </div>`;
+            targetSlot.classList.remove('text-white/50', 'text-xs', 'font-medium');
+            targetSlot.classList.add('filled', 'pl-3');
+        }
+
+        function markTeamAsDrawn(teamName) {
+            const el = document.getElementById(`team-ref-${cleanId(teamName)}`);
+            if (el) el.classList.add('drawn');
+        }
+
+        function finishDraw() {
+            document.getElementById('balls-container').innerHTML = '';
+            document.getElementById('action-title').innerHTML = "<span class='trophy-gold-text text-2xl'>¡SORTEO COMPLETADO!</span>";
+            document.getElementById('status-indicator').textContent = "FINALIZADO";
+            document.getElementById('reset-btn').classList.remove('hidden');
+            triggerConfetti();
+        }
+
+        function resetDraw() {
+            currentPotIndex = 0;
+            currentTeams = [];
+            groupAssignments = Array(12).fill().map(() => []);
+            document.getElementById('reset-btn').classList.add('hidden');
+            
+            // Reset UI Opacity
+            document.querySelectorAll('[id^="pot-display-"]').forEach(el => el.style.opacity = '1');
+            
+            initUI();
+            startPot(0);
+        }
+
+        function cleanId(str) {
+            return str.replace(/\s+/g, '-').toLowerCase().replace(/[^a-z0-9-]/g, '');
+        }
+
+        function triggerConfetti() {
+            for(let i=0; i<80; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = [
+                    'var(--accent-color)', // Gold
+                    '#FFFFFF',             // White
+                    '#FF0000',             // Red
+                    '#006C35'              // Green
+                ][Math.floor(Math.random()*4)];
+                conf.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 5000);
+            }
+        }
+    </script>
+</body>
+</html>
