@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Mundial 2026 - Completo</title>
+    <title>Simulador Mundial 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -116,7 +116,7 @@
     <header class="h-16 flex-shrink-0 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-between px-6 z-50">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black font-bold text-xs">26</div>
-            <h1 class="font-bold tracking-tight text-lg hidden md:block">SIMULADOR <span class="text-amber-400">MUNDIAL</span></h1>
+            <h1 class="font-bold tracking-tight text-lg hidden md:block">SIMULADOR <span class="text-amber-400">MUNDIAL 2026</span></h1>
         </div>
         
         <div id="game-status" class="px-4 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider text-amber-400">
@@ -141,7 +141,7 @@
                 Simulá el <span class="text-amber-400">Mundial 2026</span>
             </h2>
             <p class="text-gray-400 text-lg mb-10 max-w-lg">
-                Genera los grupos, elige a los clasificados y juega toda la fase eliminatoria hasta levantar la copa.
+                Generá los grupos, eligí a los clasificados y jugá toda la fase eliminatoria hasta levantar la copa.
             </p>
             <button onclick="runOneShotDraw()" class="bg-white text-black px-10 py-4 rounded-full text-xl font-black uppercase tracking-widest hover:bg-amber-400 hover:scale-105 transition shadow-lg">
                 Comenzar Sorteo
@@ -152,7 +152,7 @@
         <section id="draw-section" class="hidden-section p-6 min-h-full">
             <div id="groups-header" class="text-center mb-8">
                 <h2 class="text-3xl font-bold text-white">Fase de Grupos</h2>
-                <p class="text-gray-400 text-sm mt-2">Haz clic para ordenar: <span class="text-amber-400">1º Oro</span>, <span class="text-gray-300">2º Plata</span>. <span id="phase2-hint" class="hidden text-orange-400">Luego elige 8 terceros.</span></p>
+                <p class="text-gray-400 text-sm mt-2">Hacé clic para ordenar: <span class="text-amber-400">1º de cada grupo</span>, <span class="text-gray-300">2º de cada grupo</span>. <span id="phase2-hint" class="hidden text-orange-400">Luego elige 8 terceros.</span></p>
             </div>
             <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
                 <!-- Grupos JS -->
@@ -278,7 +278,7 @@
                 renderAllGroups();
 
                 if(groupsState.every(g => g.selectionStep === 2)) {
-                    showModal("Fase 1 Completa", "Ahora elige los 8 mejores terceros.", startPhase2);
+                    showModal("Ahora eligí los 8 mejores terceros de la primera ronda.", startPhase2);
                 }
             } else if (currentPhase === 2) {
                 if(team.status === 1 || team.status === 2) return;
