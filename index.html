@@ -278,7 +278,7 @@
                 renderAllGroups();
 
                 if(groupsState.every(g => g.selectionStep === 2)) {
-                    showModal("Ahora eligí los 8 mejores terceros de la primera ronda.", startPhase2);
+                    showModal("Fase 1 Completa", "Ahora eligí los 8 mejores terceros de la primera ronda.", startPhase2);
                 }
             } else if (currentPhase === 2) {
                 if(team.status === 1 || team.status === 2) return;
