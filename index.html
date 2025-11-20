@@ -3,414 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Sorteo Mundial 2026</title>
+    <title>Simulador Mundial 2026 - Completo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-bg: #1B443B; /* Dark Green */
-            --secondary-bg: #2A5A4D; /* Slightly lighter green */
-            --accent-color: #DAA520; /* Goldenrod/Gold */
-            --text-light: #E0E7FF;
-            --text-dark: #A9B3BB;
+            --bg-deep: #0f172a;
+            --accent-gold: #fbbf24;
+            --accent-silver: #94a3b8;
+            --accent-bronze: #cd7f32;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top, #1e293b, #020617);
+            color: white;
+            overflow-x: hidden; /* Para evitar scroll global horizontal, usamos scroll interno en el bracket */
+        }
+
+        /* --- Estilos Generales --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .team-card {
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .team-card:hover { background: rgba(255,255,255,0.1); }
+
+        /* Rankings Fase de Grupos */
+        .rank-1 { border-left: 4px solid var(--accent-gold) !important; background: linear-gradient(90deg, rgba(251,191,36,0.1), transparent); }
+        .rank-2 { border-left: 4px solid var(--accent-silver) !important; background: linear-gradient(90deg, rgba(148,163,184,0.1), transparent); }
+        .rank-3 { border-left: 4px solid var(--accent-bronze) !important; background: linear-gradient(90deg, rgba(205,127,50,0.1), transparent); }
+        .rank-badge { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; color: black; margin-right: 8px; }
+
+        /* --- Estilos del Bracket (Fase 3) --- */
+        #bracket-container {
+            display: flex;
+            gap: 40px;
+            padding: 20px;
+            overflow-x: auto;
+            min-height: 80vh;
+            align-items: center; /* Centrar verticalmente */
         }
         
-        .trophy-gold-text {
-            color: var(--accent-color);
+        .round-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            min-width: 240px;
+            gap: 20px;
         }
 
-        .trophy-gold-border {
-            border-color: var(--accent-color);
+        .match-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         }
 
-        .trophy-gold-bg {
-            background-color: var(--accent-color);
-        }
-
-        /* Ball Animation */
-        .draw-ball {
-            width: 50px;
-            height: 50px;
-            background: radial-gradient(circle at 30% 30%, #3a3a3a, #1a1a1a);
-            border-radius: 50%;
-            box-shadow: 0 0 10px rgba(0,0,0,0.4);
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .match-team {
+            padding: 8px 12px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: var(--text-light);
-            font-weight: 600;
-            font-size: 10px;
-            border: 1px solid #555;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .draw-ball::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(45deg);
-        }
-
-        .draw-ball:hover {
-            transform: scale(1.2);
-            border-color: var(--accent-color);
-            box-shadow: 0 0 20px rgba(218, 165, 32, 0.6);
-        }
-
-        .draw-ball.popped {
-            transform: scale(0);
-            opacity: 0;
-        }
-
-        /* Team Cards in Pots */
-        .team-item {
-            transition: all 0.3s ease;
-            background: rgba(0,0,0,0.1);
-            border-radius: 4px;
-        }
-        .team-item.drawn {
-            opacity: 0.3;
-            text-decoration: line-through;
-            background-color: transparent;
-        }
-
-        /* Group Card */
-        .group-card {
-            background: var(--secondary-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .group-header {
-            background: var(--primary-bg);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        /* Group Slot Animation */
-        .group-slot {
-            transition: all 0.5s ease;
+            gap: 8px;
+            cursor: pointer;
             border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.2s;
+            height: 40px;
         }
-        .group-slot.filled {
-            animation: slideIn 0.4s ease-out forwards;
-            background: linear-gradient(90deg, rgba(218, 165, 32, 0.1), transparent);
-            border-left: 3px solid var(--accent-color);
+        .match-team:last-child { border-bottom: none; }
+        .match-team:hover { background: rgba(255,255,255,0.1); }
+        
+        .match-team.winner {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.2), transparent);
+            font-weight: bold;
+            color: #4ade80;
         }
+        .match-team.loser { opacity: 0.4; }
+        .match-team.empty { color: #64748b; font-style: italic; font-size: 12px; pointer-events: none; }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+        .round-title { text-align: center; color: #94a3b8; text-transform: uppercase; font-size: 12px; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; position: sticky; top: 0; background: #020617; padding: 10px; z-index: 10; }
 
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            animation: fall linear forwards;
-            z-index: 100;
-        }
+        /* Scrollbar personalizado para el bracket */
+        #bracket-container::-webkit-scrollbar { height: 12px; }
+        #bracket-container::-webkit-scrollbar-thumb { background: #475569; border-radius: 6px; }
+        #bracket-container::-webkit-scrollbar-track { background: #0f172a; }
 
-        @keyframes fall {
-            to { transform: translateY(100vh) rotate(720deg); }
+        /* Utilidades */
+        .hidden-section { display: none !important; }
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Campeón */
+        .champion-card {
+            transform: scale(1.2);
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- Header -->
-    <header class="bg-black/50 border-b border-white/10 p-4 sticky top-0 z-50 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 trophy-gold-bg rounded-full flex items-center justify-center font-extrabold text-white text-xs">26</div>
-                <h1 class="text-2xl font-extrabold tracking-tight text-white">
-                    MUNDIAL <span class="trophy-gold-text">2026</span>
-                </h1>
-            </div>
-            <div class="text-xs font-mono bg-white/10 text-white px-3 py-1 rounded-full border border-white/20" id="status-indicator">
-                Listo
-            </div>
+    <!-- Header Fijo -->
+    <header class="h-16 flex-shrink-0 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center justify-between px-6 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-black font-bold text-xs">26</div>
+            <h1 class="font-bold tracking-tight text-lg hidden md:block">SIMULADOR <span class="text-amber-400">MUNDIAL</span></h1>
         </div>
+        
+        <div id="game-status" class="px-4 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider text-amber-400">
+            Inicio
+        </div>
+
+        <button onclick="location.reload()" class="text-xs text-gray-400 hover:text-white uppercase tracking-wider font-semibold border border-white/20 px-3 py-1 rounded-full hover:bg-white/10 transition">
+            Reiniciar
+        </button>
     </header>
 
-    <main class="flex-grow container mx-auto p-4 space-y-8">
+    <!-- Área Principal -->
+    <main class="flex-grow overflow-y-auto relative">
         
-        <!-- Pots Display -->
-        <section id="pots-container" class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            <!-- Pots will be injected here by JS -->
+        <!-- SECCIÓN 1: INTRO -->
+        <section id="intro-section" class="min-h-full flex flex-col items-center justify-center text-center p-6 fade-in">
+            <div class="mb-6 relative">
+                <div class="absolute inset-0 bg-amber-500 blur-[80px] opacity-20 rounded-full"></div>
+                <div class="relative text-7xl animate-bounce">⚽</div>
+            </div>
+            <h2 class="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">
+                Simulá el <span class="text-amber-400">Mundial 2026</span>
+            </h2>
+            <p class="text-gray-400 text-lg mb-10 max-w-lg">
+                Genera los grupos, elige a los clasificados y juega toda la fase eliminatoria hasta levantar la copa.
+            </p>
+            <button onclick="runOneShotDraw()" class="bg-white text-black px-10 py-4 rounded-full text-xl font-black uppercase tracking-widest hover:bg-amber-400 hover:scale-105 transition shadow-lg">
+                Comenzar Sorteo
+            </button>
         </section>
 
-        <!-- Groups Grid (12 Groups for 2026) -->
-        <div class="text-center mb-2">
-            <h2 class="text-xl font-extrabold text-white tracking-widest uppercase">Fase de Grupos</h2>
-            <div class="w-24 h-1 trophy-gold-bg mx-auto mt-2 rounded-full"></div>
-        </div>
-        
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <!-- Groups A-L -->
-            <div id="groups-grid" class="contents">
-                <!-- Groups injected here -->
+        <!-- SECCIÓN 2: GRUPOS (Scroll vertical) -->
+        <section id="draw-section" class="hidden-section p-6 min-h-full">
+            <div id="groups-header" class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white">Fase de Grupos</h2>
+                <p class="text-gray-400 text-sm mt-2">Haz clic para ordenar: <span class="text-amber-400">1º Oro</span>, <span class="text-gray-300">2º Plata</span>. <span id="phase2-hint" class="hidden text-orange-400">Luego elige 8 terceros.</span></p>
+            </div>
+            <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                <!-- Grupos JS -->
             </div>
         </section>
-        <!-- Spacer for footer -->
-        <div class="h-24"></div>
+
+        <!-- SECCIÓN 3: BRACKET (Scroll horizontal) -->
+        <section id="bracket-section" class="hidden-section h-full w-full bg-[#0f172a]">
+            <div id="bracket-container">
+                <!-- Columnas del Bracket inyectadas por JS -->
+            </div>
+        </section>
+
     </main>
 
-    <!-- Footer / Interaction Zone -->
-    <footer class="bg-black/50 border-t border-white/10 p-6 fixed bottom-0 w-full shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-40">
-        <div class="container mx-auto text-center">
-            <h2 id="action-title" class="text-lg font-bold text-white mb-4 uppercase tracking-wider">Esperando inicio...</h2>
-            
-            <!-- The Black Balls Container -->
-            <div id="balls-container" class="flex flex-wrap justify-center gap-3 min-h-[60px]">
-                <!-- Balls injected here -->
-            </div>
-
-            <button id="reset-btn" onclick="resetDraw()" class="hidden mt-4 px-8 py-3 bg-white text-gray-900 font-bold rounded-full hover:bg-gray-200 transition shadow-lg">
-                NUEVO SORTEO
-            </button>
+    <!-- MODAL -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#1e293b] p-8 rounded-2xl border border-white/10 shadow-2xl max-w-md text-center transform scale-95 transition-all">
+            <div class="text-4xl mb-4">🏆</div>
+            <h3 id="modal-title" class="text-2xl font-bold text-white mb-2">Título</h3>
+            <p id="modal-msg" class="text-gray-300 mb-6">Mensaje</p>
+            <button id="modal-btn" class="px-8 py-3 bg-amber-500 text-black font-bold rounded-full hover:bg-amber-400 transition shadow-lg">Continuar</button>
         </div>
-    </footer>
+    </div>
 
     <script>
-        // --- DATA 2026 ---
-        // Banderas eliminadas para evitar problemas de renderizado
+        // --- DATOS ---
         const potsData = [
-            {
-                id: 1,
-                label: "Bombo 1 (Cabezas)",
-                teams: [
-                    { name: "Estados Unidos" }, { name: "México" }, { name: "Canadá" },
-                    { name: "Argentina" }, { name: "Brasil" }, { name: "Inglaterra" },
-                    { name: "Francia" }, { name: "Portugal" }, { name: "Países Bajos" },
-                    { name: "Alemania" }, { name: "Bélgica" }, { name: "España" }
-                ]
-            },
-            {
-                id: 2,
-                label: "Bombo 2",
-                teams: [
-                    { name: "Croacia" }, { name: "Marruecos" }, { name: "Colombia" },
-                    { name: "Uruguay" }, { name: "Senegal" }, { name: "Suiza" },
-                    { name: "Japón" }, { name: "Irán" }, { name: "Corea del Sur" },
-                    { name: "Ecuador" }, { name: "Austria" }, { name: "Australia" }
-                ]
-            },
-            {
-                id: 3,
-                label: "Bombo 3",
-                teams: [
-                    { name: "Noruega" }, { name: "Panamá" }, { name: "Egipto" },
-                    { name: "Argelia" }, { name: "Escocia" }, { name: "Paraguay" },
-                    { name: "Túnez" }, { name: "Costa de Marfil" }, { name: "Uzbekistán" },
-                    { name: "Qatar" }, { name: "Arabia Saudita" }, { name: "Sudáfrica" }
-                ]
-            },
-            {
-                id: 4,
-                label: "Bombo 4",
-                teams: [
-                    { name: "Jordania" }, { name: "Cabo Verde" }, { name: "Ghana" },
-                    { name: "Curazao" }, { name: "Haití" }, { name: "Nueva Zelanda" },
-                    { name: "Repechaje Europa 1" }, { name: "Repechaje Europa 2" }, { name: "Repechaje Europa 3" },
-                    { name: "Repechaje Europa 4" }, { name: "Rep. Intercont. 1" }, { name: "Rep. Intercont. 2" }
-                ]
-            }
+            [ { name: "Estados Unidos", code: "us" }, { name: "México", code: "mx" }, { name: "Canadá", code: "ca" }, { name: "Argentina", code: "ar" }, { name: "Brasil", code: "br" }, { name: "Inglaterra", code: "gb-eng" }, { name: "Francia", code: "fr" }, { name: "Portugal", code: "pt" }, { name: "Países Bajos", code: "nl" }, { name: "Alemania", code: "de" }, { name: "Bélgica", code: "be" }, { name: "España", code: "es" } ],
+            [ { name: "Croacia", code: "hr" }, { name: "Marruecos", code: "ma" }, { name: "Colombia", code: "co" }, { name: "Uruguay", code: "uy" }, { name: "Senegal", code: "sn" }, { name: "Suiza", code: "ch" }, { name: "Japón", code: "jp" }, { name: "Irán", code: "ir" }, { name: "Corea del Sur", code: "kr" }, { name: "Ecuador", code: "ec" }, { name: "Austria", code: "at" }, { name: "Australia", code: "au" } ],
+            [ { name: "Noruega", code: "no" }, { name: "Panamá", code: "pa" }, { name: "Egipto", code: "eg" }, { name: "Argelia", code: "dz" }, { name: "Escocia", code: "gb-sct" }, { name: "Paraguay", code: "py" }, { name: "Túnez", code: "tn" }, { name: "Costa de Marfil", code: "ci" }, { name: "Uzbekistán", code: "uz" }, { name: "Qatar", code: "qa" }, { name: "Arabia Saudita", code: "sa" }, { name: "Sudáfrica", code: "za" } ],
+            [ { name: "Jordania", code: "jo" }, { name: "Cabo Verde", code: "cv" }, { name: "Ghana", code: "gh" }, { name: "Curazao", code: "cw" }, { name: "Haití", code: "ht" }, { name: "Nueva Zelanda", code: "nz" }, { name: "Repechaje EU", code: "eu" }, { name: "Repechaje EU", code: "eu" }, { name: "Repechaje EU", code: "eu" }, { name: "Repechaje EU", code: "eu" }, { name: "Rep. Inter", code: "un" }, { name: "Rep. Inter", code: "un" } ]
         ];
 
-        // 12 Groups for 2026
-        const groupNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+        const groupLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
         
-        // --- STATE ---
-        let currentPotIndex = 0;
-        let currentTeams = [];
-        let groupAssignments = Array(12).fill().map(() => []); 
-        let currentGroupTarget = 0; // 0 = A ... 11 = L
+        // Estado Global
+        let groupsState = [];
+        let currentPhase = 1; // 1=Grupos(1/2), 2=Grupos(3ros), 3=Bracket
+        let bestThirdsCount = 0;
+        const MAX_THIRDS = 8;
 
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initUI();
-            startPot(0);
-        });
+        // Estructura de Partidos (Base vacía)
+        let matches = {}; 
 
-        function initUI() {
-            // Render Pots
-            const potsContainer = document.getElementById('pots-container');
-            potsContainer.innerHTML = '';
-            potsData.forEach((pot, index) => {
-                const potDiv = document.createElement('div');
-                potDiv.className = `p-3 rounded-lg border border-white/10 ${index === 0 ? 'bg-white/5' : 'bg-black/20'}`;
-                potDiv.id = `pot-display-${index}`;
-                potDiv.innerHTML = `
-                    <h3 class="font-bold text-white mb-2 text-center uppercase text-[10px] tracking-widest">${pot.label}</h3>
-                    <ul class="grid grid-cols-1 gap-1">
-                        ${pot.teams.map(t => `
-                            <li class="team-item flex items-center gap-2 p-1 text-white/80" id="team-ref-${cleanId(t.name)}">
-                                <span class="truncate font-medium">${t.name}</span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                `;
-                potsContainer.appendChild(potDiv);
+        // --- INICIO ---
+        function runOneShotDraw() {
+            // Inicializar Grupos
+            groupsState = groupLetters.map(letter => ({ id: letter, teams: [], selectionStep: 0 }));
+            potsData.forEach(pot => {
+                const shuffled = [...pot].sort(() => Math.random() - 0.5);
+                shuffled.forEach((team, i) => groupsState[i].teams.push({ ...team, status: 0 }));
             });
 
-            // Render Groups (12 cards)
-            const groupsGrid = document.getElementById('groups-grid');
-            groupsGrid.innerHTML = '';
-            groupNames.forEach((letter, index) => {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = "group-card rounded-xl overflow-hidden shadow-lg flex flex-col";
-                groupDiv.innerHTML = `
-                    <div class="group-header p-3 flex justify-between items-center">
-                        <span class="font-extrabold text-white text-lg">GRUPO ${letter}</span>
-                        <span class="text-xs text-white/50 font-mono">#${index + 1}</span>
-                    </div>
-                    <div class="p-3 flex-grow space-y-1 bg-[var(--secondary-bg)] min-h-[140px]" id="group-content-${index}">
-                        <!-- 4 Slots per group -->
-                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">1. [Cabeza de Serie]</div>
-                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">2. [Bombo 2]</div>
-                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">3. [Bombo 3]</div>
-                        <div class="group-slot py-2 px-2 text-white/50 text-xs font-medium">4. [Bombo 4]</div>
-                    </div>
-                `;
-                groupsGrid.appendChild(groupDiv);
-            });
+            // Cambiar Vista
+            document.getElementById('intro-section').classList.add('hidden-section');
+            document.getElementById('draw-section').classList.remove('hidden-section');
+            document.getElementById('game-status').innerText = "Fase de Grupos";
+            
+            renderAllGroups();
         }
 
-        function startPot(potIndex) {
-            if (potIndex >= 4) {
-                finishDraw();
-                return;
-            }
-
-            currentPotIndex = potIndex;
-            currentTeams = [...potsData[potIndex].teams]; 
-            currentGroupTarget = 0; 
-
-            // UI Updates
-            const potLabel = potsData[potIndex].label;
-            document.getElementById('action-title').innerHTML = `SORTEANDO <span class="trophy-gold-text">${potLabel}</span> (${currentTeams.length} Equipos)`;
-            document.getElementById('status-indicator').textContent = `Bombo ${potIndex + 1}/4`;
-            
-            // Highlight current pot
-            document.querySelectorAll('[id^="pot-display-"]').forEach((el, idx) => {
-                if (idx === potIndex) {
-                    el.classList.add('trophy-gold-border', 'bg-white/10', 'ring-1', 'ring-[var(--accent-color)]');
-                    el.classList.remove('bg-black/20', 'border-white/10');
-                } else {
-                    el.classList.remove('trophy-gold-border', 'bg-white/10', 'ring-1', 'ring-[var(--accent-color)]');
-                    el.classList.add('border-white/10', 'bg-black/20');
-                    if(idx < potIndex) el.style.opacity = '0.4';
-                }
-            });
-
-            renderBalls(currentTeams.length);
+        // --- LÓGICA FASE DE GRUPOS ---
+        function renderAllGroups() {
+            const grid = document.getElementById('groups-grid');
+            grid.innerHTML = '';
+            groupsState.forEach((g, i) => grid.appendChild(createGroupCard(g, i)));
         }
 
-        function renderBalls(count) {
-            const container = document.getElementById('balls-container');
-            container.innerHTML = '';
+        function createGroupCard(group, groupIndex) {
+            const div = document.createElement('div');
+            div.className = "glass-panel rounded-xl p-3 flex flex-col gap-2 shadow-lg";
             
-            for (let i = 0; i < count; i++) {
-                const ball = document.createElement('div');
-                ball.className = 'draw-ball animate-bounce-in';
-                ball.innerHTML = '⚽';
-                ball.onclick = (e) => pickTeam(e.target);
-                container.appendChild(ball);
-            }
-        }
+            // Header
+            let headerClass = "text-white";
+            if(group.selectionStep === 2) headerClass = "text-green-400";
+            if(currentPhase === 2 && group.teams.some(t=>t.status===3)) headerClass = "text-orange-400";
 
-        function pickTeam(ballElement) {
-            if (ballElement.classList.contains('popped')) return;
-            
-            ballElement.classList.add('popped');
-            
-            const randomIndex = Math.floor(Math.random() * currentTeams.length);
-            const selectedTeam = currentTeams[randomIndex];
-            
-            currentTeams.splice(randomIndex, 1);
-
-            const groupIndex = currentGroupTarget;
-            groupAssignments[groupIndex].push(selectedTeam);
-
-            updateGroupUI(groupIndex, selectedTeam, currentPotIndex);
-            markTeamAsDrawn(selectedTeam.name);
-
-            currentGroupTarget++;
-
-            if (currentTeams.length === 0) {
-                setTimeout(() => {
-                    startPot(currentPotIndex + 1);
-                }, 800);
-            }
-        }
-
-        function updateGroupUI(groupIndex, team, potIndex) {
-            const container = document.getElementById(`group-content-${groupIndex}`);
-            const slots = container.querySelectorAll('.group-slot');
-            const targetSlot = slots[potIndex]; 
-
-            targetSlot.innerHTML = `<div class="flex items-center gap-3">
-                <span class="font-bold text-white text-sm">${team.name}</span>
+            div.innerHTML = `<div class="flex justify-between items-center mb-1 border-b border-white/10 pb-2">
+                <span class="font-black ${headerClass}">GRUPO ${group.id}</span>
+                <span class="text-[10px] uppercase text-gray-500">${getGroupStatusText(group)}</span>
             </div>`;
-            targetSlot.classList.remove('text-white/50', 'text-xs', 'font-medium');
-            targetSlot.classList.add('filled', 'pl-3');
+
+            // Teams
+            group.teams.forEach((team, idx) => {
+                const flag = getFlag(team.code);
+                let style = "opacity-70 grayscale";
+                let badge = "";
+                
+                if(team.status === 1) { style = "rank-1 opacity-100"; badge = `<div class="rank-badge bg-amber-400">1</div>`; }
+                else if(team.status === 2) { style = "rank-2 opacity-100"; badge = `<div class="rank-badge bg-slate-400">2</div>`; }
+                else if(team.status === 3) { style = "rank-3 opacity-100"; badge = `<div class="rank-badge bg-orange-600 text-white">3</div>`; }
+                else if(currentPhase === 1 && group.selectionStep === 2) style = "opacity-30"; 
+
+                const row = document.createElement('div');
+                row.className = `team-card ${style} p-2 rounded flex items-center gap-2 select-none`;
+                row.innerHTML = `${badge}<img src="${flag}" class="w-5 h-3 object-cover rounded shadow">${team.name}`;
+                row.onclick = () => handleGroupClick(groupIndex, idx);
+                div.appendChild(row);
+            });
+            return div;
         }
 
-        function markTeamAsDrawn(teamName) {
-            const el = document.getElementById(`team-ref-${cleanId(teamName)}`);
-            if (el) el.classList.add('drawn');
+        function getGroupStatusText(g) {
+            if(currentPhase === 1) return g.selectionStep === 2 ? "Listo" : "Elegir 1º/2º";
+            if(currentPhase === 2) return g.teams.some(t=>t.status===3) ? "3º Listo" : "Elegir 3º (Opc)";
+            return "";
         }
 
-        function finishDraw() {
-            document.getElementById('balls-container').innerHTML = '';
-            document.getElementById('action-title').innerHTML = "<span class='trophy-gold-text text-2xl'>¡SORTEO COMPLETADO!</span>";
-            document.getElementById('status-indicator').textContent = "FINALIZADO";
-            document.getElementById('reset-btn').classList.remove('hidden');
-            triggerConfetti();
+        function handleGroupClick(gIdx, tIdx) {
+            const group = groupsState[gIdx];
+            const team = group.teams[tIdx];
+
+            if(currentPhase === 1) {
+                if(group.selectionStep === 2) { resetGroup(gIdx); return; }
+                if(team.status !== 0) return;
+
+                team.status = group.selectionStep === 0 ? 1 : 2;
+                group.selectionStep++;
+                
+                // Ordenar visualmente
+                group.teams.sort((a,b) => (a.status===0?9:a.status) - (b.status===0?9:b.status));
+                renderAllGroups();
+
+                if(groupsState.every(g => g.selectionStep === 2)) {
+                    showModal("Fase 1 Completa", "Ahora elige los 8 mejores terceros.", startPhase2);
+                }
+            } else if (currentPhase === 2) {
+                if(team.status === 1 || team.status === 2) return;
+                
+                if(team.status === 3) { team.status = 0; bestThirdsCount--; }
+                else {
+                    if(bestThirdsCount >= MAX_THIRDS) { alert("Solo 8 terceros"); return; }
+                    // Quitar otro tercero del mismo grupo si existe
+                    const old = group.teams.find(t=>t.status===3);
+                    if(old) { old.status=0; bestThirdsCount--; }
+                    team.status = 3; bestThirdsCount++;
+                }
+                group.teams.sort((a,b) => (a.status===0?9:a.status) - (b.status===0?9:b.status));
+                renderAllGroups();
+                
+                if(bestThirdsCount === MAX_THIRDS) {
+                    setTimeout(() => showModal("¡Fase de Grupos Terminada!", "Generando llave de eliminatorias...", startBracketPhase), 500);
+                }
+            }
         }
 
-        function resetDraw() {
-            currentPotIndex = 0;
-            currentTeams = [];
-            groupAssignments = Array(12).fill().map(() => []);
-            document.getElementById('reset-btn').classList.add('hidden');
+        function resetGroup(idx) {
+            groupsState[idx].teams.forEach(t => t.status=0);
+            groupsState[idx].selectionStep=0;
+            renderAllGroups();
+        }
+
+        function startPhase2() {
+            currentPhase = 2;
+            document.getElementById('phase2-hint').classList.remove('hidden');
+            document.getElementById('game-status').innerText = "Eligiendo Terceros";
+            renderAllGroups();
+        }
+
+        // --- LÓGICA FASE 3: BRACKET ---
+        
+        function startBracketPhase() {
+            currentPhase = 3;
+            document.getElementById('draw-section').classList.add('hidden-section');
+            const bracketSection = document.getElementById('bracket-section');
+            bracketSection.classList.remove('hidden-section');
+            document.getElementById('game-status').innerText = "Eliminatorias";
             
-            // Reset UI Opacity
-            document.querySelectorAll('[id^="pot-display-"]').forEach(el => el.style.opacity = '1');
+            generateBracketData();
+            renderBracket();
+        }
+
+        function getTeam(groupId, rank) {
+            // groupId: 'A', 'B'... rank: 1, 2, 3
+            const group = groupsState.find(g => g.id === groupId);
+            return group.teams.find(t => t.status === rank);
+        }
+
+        function generateBracketData() {
+            // 1. Identificar a los terceros clasificados y sus grupos
+            const thirdPlaceGroups = groupsState
+                .filter(g => g.teams.some(t => t.status === 3))
+                .map(g => g.id); // Ej: ['A', 'C', 'D', ...]
+
+            // 2. Función auxiliar para asignar terceros
+            // Toma una lista de opciones (Ej: 'A,B,C'), busca cuál está disponible y la asigna
+            const assignedThirds = new Set();
+            function getThird(optionsArray) {
+                for (let letter of optionsArray) {
+                    if (thirdPlaceGroups.includes(letter) && !assignedThirds.has(letter)) {
+                        assignedThirds.add(letter);
+                        return getTeam(letter, 3);
+                    }
+                }
+                // Fallback por si la combinación es rara (agarra cualquiera disponible)
+                for (let letter of thirdPlaceGroups) {
+                    if (!assignedThirds.has(letter)) {
+                        assignedThirds.add(letter);
+                        return getTeam(letter, 3);
+                    }
+                }
+                return { name: "TBD", code: "un" };
+            }
+
+            // 3. Definir Partidos (Round of 32)
+            // ID: numero de partido. Next: a donde va el ganador. Slot: 0 (arriba) o 1 (abajo) en el siguiente partido.
             
-            initUI();
-            startPot(0);
+            // DIECISEISAVOS (R32)
+            const r32 = [
+                { id: 73, t1: getTeam('A', 2), t2: getTeam('B', 2), next: 90, slot: 0 },
+                { id: 74, t1: getTeam('E', 1), t2: getThird(['A','B','C','D','F']), next: 89, slot: 0 },
+                { id: 75, t1: getTeam('F', 1), t2: getTeam('C', 2), next: 90, slot: 1 },
+                { id: 76, t1: getTeam('C', 1), t2: getTeam('F', 2), next: 91, slot: 0 }, // Corregido: 1C vs 2F
+                { id: 77, t1: getTeam('I', 1), t2: getThird(['C','D','F','G','H']), next: 89, slot: 1 },
+                { id: 78, t1: getTeam('E', 2), t2: getTeam('I', 2), next: 91, slot: 1 },
+                { id: 79, t1: getTeam('A', 1), t2: getThird(['C','E','F','H','I']), next: 92, slot: 0 },
+                { id: 80, t1: getTeam('L', 1), t2: getThird(['E','H','I','J','K']), next: 92, slot: 1 },
+                { id: 81, t1: getTeam('D', 1), t2: getThird(['B','E','F','I','J']), next: 94, slot: 0 },
+                { id: 82, t1: getTeam('G', 1), t2: getThird(['A','E','H','I','J']), next: 94, slot: 1 },
+                { id: 83, t1: getTeam('K', 2), t2: getTeam('L', 2), next: 93, slot: 0 },
+                { id: 84, t1: getTeam('H', 1), t2: getTeam('J', 2), next: 93, slot: 1 },
+                { id: 85, t1: getTeam('B', 1), t2: getThird(['E','F','G','I','J']), next: 96, slot: 0 },
+                { id: 86, t1: getTeam('J', 1), t2: getTeam('H', 2), next: 95, slot: 0 },
+                { id: 87, t1: getTeam('K', 1), t2: getThird(['D','E','I','J','L']), next: 96, slot: 1 },
+                { id: 88, t1: getTeam('D', 2), t2: getTeam('G', 2), next: 95, slot: 1 }
+            ];
+
+            // Inicializar estado de partidos en objeto matches
+            r32.forEach(m => matches[m.id] = createMatchObj(m));
+
+            // Crear huecos vacíos para las siguientes rondas
+            // OCTAVOS
+            [89, 90, 91, 92, 93, 94, 95, 96].forEach(id => matches[id] = createMatchObj({ id, next: getNextForR16(id), slot: id % 2 === 1 ? 0 : 1 }));
+            // CUARTOS
+            [97, 98, 99, 100].forEach(id => matches[id] = createMatchObj({ id, next: getNextForQF(id), slot: id % 2 === 1 ? 0 : 1 }));
+            // SEMIS
+            matches[101] = createMatchObj({ id: 101, next: 104, slot: 0, loserNext: 103, loserSlot: 0 });
+            matches[102] = createMatchObj({ id: 102, next: 104, slot: 1, loserNext: 103, loserSlot: 1 });
+            // TERCER PUESTO
+            matches[103] = createMatchObj({ id: 103, next: null });
+            // FINAL
+            matches[104] = createMatchObj({ id: 104, next: null });
         }
 
-        function cleanId(str) {
-            return str.replace(/\s+/g, '-').toLowerCase().replace(/[^a-z0-9-]/g, '');
+        function createMatchObj(data) {
+            return {
+                id: data.id,
+                p1: data.t1 || null,
+                p2: data.t2 || null,
+                winner: null,
+                nextMatchId: data.next,
+                nextMatchSlot: data.slot,
+                loserNext: data.loserNext || null,
+                loserSlot: data.loserSlot || 0
+            };
         }
 
-        function triggerConfetti() {
-            for(let i=0; i<80; i++) {
-                const conf = document.createElement('div');
-                conf.className = 'confetti';
-                conf.style.left = Math.random() * 100 + 'vw';
-                conf.style.backgroundColor = [
-                    'var(--accent-color)', // Gold
-                    '#FFFFFF',             // White
-                    '#FF0000',             // Red
-                    '#006C35'              // Green
-                ][Math.floor(Math.random()*4)];
-                conf.style.animationDuration = (Math.random() * 3 + 2) + 's';
-                document.body.appendChild(conf);
-                setTimeout(() => conf.remove(), 5000);
+        // Helpers para conectar las llaves manualmente según el esquema
+        function getNextForR16(id) {
+            if(id==89||id==90) return 97;
+            if(id==91||id==92) return 99;
+            if(id==93||id==94) return 98;
+            if(id==95||id==96) return 100;
+        }
+        function getNextForQF(id) {
+            if(id==97||id==98) return 101;
+            if(id==99||id==100) return 102;
+        }
+
+        // --- RENDERIZADO DEL BRACKET ---
+        function renderBracket() {
+            const container = document.getElementById('bracket-container');
+            container.innerHTML = '';
+
+            // Definir Columnas
+            const rounds = [
+                { name: "16avos", ids: [74,77,73,75,76,78,79,80,83,84,81,82,86,88,85,87] }, // Orden visual para que coincidan las llaves
+                { name: "Octavos", ids: [89, 90, 91, 92, 93, 94, 95, 96] },
+                { name: "Cuartos", ids: [97, 99, 98, 100] },
+                { name: "Semis", ids: [101, 102] },
+                { name: "Finales", ids: [104, 103] } // Final arriba, 3ro abajo
+            ];
+
+            rounds.forEach(round => {
+                const col = document.createElement('div');
+                col.className = "round-column";
+                
+                const title = document.createElement('div');
+                title.className = "round-title";
+                title.innerText = round.name;
+                col.appendChild(title);
+
+                round.ids.forEach(matchId => {
+                    col.appendChild(createMatchCard(matches[matchId]));
+                });
+
+                container.appendChild(col);
+            });
+        }
+
+        function createMatchCard(match) {
+            const card = document.createElement('div');
+            card.className = "match-card";
+            if (match.id === 104) card.classList.add("border-amber-400", "border-2"); // Highlight Final
+            if (match.id === 103) card.classList.add("opacity-80"); // 3rd place
+
+            // Equipo 1
+            const div1 = document.createElement('div');
+            div1.className = `match-team ${match.winner === match.p1 && match.winner ? 'winner' : ''} ${match.winner && match.winner !== match.p1 ? 'loser' : ''}`;
+            if (!match.p1) {
+                div1.classList.add('empty');
+                div1.innerText = "Esperando...";
+            } else {
+                div1.innerHTML = `<img src="${getFlag(match.p1.code)}" class="w-5 h-3">${match.p1.name}`;
+                div1.onclick = () => advanceTeam(match.id, match.p1);
+            }
+
+            // Equipo 2
+            const div2 = document.createElement('div');
+            div2.className = `match-team ${match.winner === match.p2 && match.winner ? 'winner' : ''} ${match.winner && match.winner !== match.p2 ? 'loser' : ''}`;
+            if (!match.p2) {
+                div2.classList.add('empty');
+                div2.innerText = "Esperando...";
+            } else {
+                div2.innerHTML = `<img src="${getFlag(match.p2.code)}" class="w-5 h-3">${match.p2.name}`;
+                div2.onclick = () => advanceTeam(match.id, match.p2);
+            }
+
+            // Info Partido
+            const info = document.createElement('div');
+            info.className = "text-[9px] text-gray-600 text-center bg-black/20 py-1";
+            info.innerText = match.id === 104 ? "FINAL" : (match.id === 103 ? "3er Puesto" : `#${match.id}`);
+
+            card.appendChild(div1);
+            card.appendChild(div2);
+            card.appendChild(info);
+            return card;
+        }
+
+        function advanceTeam(matchId, winnerTeam) {
+            const match = matches[matchId];
+            if (match.winner) return; // Ya se jugó
+
+            match.winner = winnerTeam;
+            const loserTeam = winnerTeam === match.p1 ? match.p2 : match.p1;
+
+            // Avanzar Ganador
+            if (match.nextMatchId) {
+                const nextMatch = matches[match.nextMatchId];
+                if (match.nextMatchSlot === 0) nextMatch.p1 = winnerTeam;
+                else nextMatch.p2 = winnerTeam;
+            }
+
+            // Caso Semifinales: Perdedor va al 3er puesto
+            if (match.loserNext && loserTeam) {
+                const loserMatch = matches[match.loserNext];
+                if (match.loserSlot === 0) loserMatch.p1 = loserTeam;
+                else loserMatch.p2 = loserTeam;
+            }
+
+            // Si es la final
+            if (match.id === 104) {
+                launchConfetti();
+                showModal("¡CAMPEÓN!", `🏆 ${winnerTeam.name} ha ganado el Mundial 2026`, null);
+            }
+
+            renderBracket();
+        }
+
+        // --- UTILS ---
+        function getFlag(code) {
+            if(code==='un'||code==='eu') return 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/FIFA_Flag.svg/1200px-FIFA_Flag.svg.png';
+            return `https://flagcdn.com/w40/${code}.png`;
+        }
+
+        function showModal(title, msg, callback) {
+            const overlay = document.getElementById('modal-overlay');
+            const overlayClasses = ["hidden", "opacity-0"];
+            overlay.classList.remove(...overlayClasses);
+            overlay.classList.add("flex"); // make visible immediately for layout
+            setTimeout(() => overlay.classList.add("opacity-100"), 10); // fade in
+
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerText = msg;
+            
+            const btn = document.getElementById('modal-btn');
+            btn.onclick = () => {
+                overlay.classList.remove("opacity-100");
+                setTimeout(() => overlay.classList.add("hidden"), 300);
+                if(callback) callback();
+            };
+        }
+
+        function launchConfetti() {
+            const colors = ['#fbbf24', '#ffffff', '#ef4444', '#22c55e'];
+            for(let i=0; i<100; i++) {
+                const c = document.createElement('div');
+                c.style.cssText = `position:fixed; left:${Math.random()*100}vw; top:-10px; width:10px; height:10px; background:${colors[Math.floor(Math.random()*4)]}; z-index:999; transition:1s; pointer-events:none;`;
+                document.body.appendChild(c);
+                c.animate([
+                    { transform: `translateY(0) rotate(0deg)` },
+                    { transform: `translateY(100vh) rotate(720deg)` }
+                ], { duration: Math.random()*2000+2000, fill: 'forwards' });
             }
         }
     </script>
